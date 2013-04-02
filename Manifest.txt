@@ -1,0 +1,14 @@
+.autotest
+History.txt
+Manifest.txt
+README.txt
+Rakefile
+cli.rb
+lib/stark/rack.rb
+test/calc-opt.rb
+test/calc.thrift
+test/config.ru
+test/gen-rb/calc.rb
+test/gen-rb/calc_constants.rb
+test/gen-rb/calc_types.rb
+test/test_rack.rb
