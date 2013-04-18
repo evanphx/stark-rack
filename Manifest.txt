@@ -1,10 +1,11 @@
 .autotest
+.gemtest
 History.txt
 Manifest.txt
 README.txt
 Rakefile
-cli.rb
 lib/stark/rack.rb
+stark-rack.gemspec
 test/calc-opt.rb
 test/calc.thrift
 test/config.ru
