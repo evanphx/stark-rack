@@ -79,8 +79,6 @@ class Stark::Rack
       headers['Content-Type'] = "text/plain"
 
       return [200, headers, [@metadata]]
-    elsif path != "/"
-      return [404, {}, ["Nothing at #{path}"]]
     end
 
     out = StringIO.new
