@@ -34,6 +34,7 @@ class TestRack < Test::Unit::TestCase
 
     st = Thread.new do
       env = { 'rack.input' => @sr }
+      env['PATH_INFO'] = ''
 
       code, headers, out = rack.call env
 
@@ -53,7 +54,7 @@ class TestRack < Test::Unit::TestCase
     rack = Stark::Rack.new @n::Calc::Processor.new(@handler), opts
 
     env = {}
-    env['REQUEST_PATH'] = '/metadata'
+    env['PATH_INFO'] = '/metadata'
 
     code, headers, out = rack.call env
 
@@ -65,7 +66,7 @@ class TestRack < Test::Unit::TestCase
     rack = Stark::Rack.new @n::Calc::Processor.new(@handler), opts
 
     env = {}
-    env['REQUEST_PATH'] = '/blah'
+    env['PATH_INFO'] = '/blah'
 
     code, headers, out = rack.call env
 

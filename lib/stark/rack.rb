@@ -73,12 +73,15 @@ class Stark::Rack
       'Content-Type' => "application/x-thrift"
     }
 
-    path = env['REQUEST_PATH'] || "/"
+    path = env['PATH_INFO'] || ""
+    path << "/" if path.empty?
 
     if path == "/metadata"
       headers['Content-Type'] = "text/plain"
 
       return [200, headers, [@metadata]]
+    elsif path != "/"
+      return [404, {}, ["Nothing at #{path}"]]
     end
 
     out = StringIO.new
