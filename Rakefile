@@ -3,6 +3,9 @@
 require 'rubygems'
 require 'hoe'
 
+# Don't turn on warnings, output is very ugly w/ generated code
+Hoe::RUBY_FLAGS.sub! /-w/, ''
+
 Hoe.plugin :git
 Hoe.plugin :gemspec
 
