@@ -1,4 +1,5 @@
 require 'stark'
+require 'stark/rack/content_negotiation'
 require 'stark/rack/logging_processor'
 
 class Stark::Rack
@@ -14,8 +15,9 @@ class Stark::Rack
     4 => "ONEWAY"
   }
 
+  include ContentNegotiation
+
   def initialize(processor, options={})
-    @protocol = Thrift::BinaryProtocolFactory.new
     @log = options[:log]
     @logger = STDERR
     @app_processor = processor
@@ -32,10 +34,6 @@ class Stark::Rack
   end
 
   def _call(env)
-    headers = {
-      'Content-Type' => "application/x-thrift"
-    }
-
     path = env['PATH_INFO'] || ""
     path << "/" if path.empty?
 
@@ -46,7 +44,7 @@ class Stark::Rack
     out = StringIO.new
 
     transport = Thrift::IOStreamTransport.new env['rack.input'], out
-    protocol  = @protocol.get_protocol transport
+    protocol  = protocol_factory(env).get_protocol transport
 
     if @log
       name, type, seqid, err = processor.process protocol, protocol
@@ -65,7 +63,7 @@ class Stark::Rack
       processor.process protocol, protocol
     end
 
-    [status_from_last_error, headers, [out.string]]
+    [status_from_last_error, headers(env), [out.string]]
   end
 
   def error_capture
