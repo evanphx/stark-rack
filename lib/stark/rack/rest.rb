@@ -1,4 +1,5 @@
 require 'rack/request'
+require 'rack/utils/okjson'
 
 class Stark::Rack
   # This enables requests like "GET /foo" to be translated to either a no-args
@@ -16,11 +17,21 @@ class Stark::Rack
         env["HTTP_ACCEPT"] ||= "application/json"
         create_thrift_call_from_params env
       end
-      @app.call env
+      status, headers, body = @app.call env
+      [status, headers, unmarshal_result(body)]
     end
 
     def path_to_method_name(path)
       path.split('/')[1].gsub(/[^a-zA-Z0-9_]/, '_')
+    end
+
+    def unmarshal_result(body)
+      thrift_result = Rack::Utils::OkJson.decode(body.join)
+      result_struct = thrift_result[4]
+      result = result_struct[result_struct.keys.first]
+      result = result[result.keys.first] if Hash === result
+      result = result.last if Array === result
+      [Rack::Utils::OkJson.encode("result" => result)]
     end
 
     def create_thrift_call_from_params(env)

@@ -19,7 +19,7 @@ class TestREST < Test::Unit::TestCase
       code, headers, out = rack.call env
     end.join
 
-    json = '[1,"last_result",2,0,{"0":{"i32":4}}]'
+    json = '{"result":4}'
     assert_equal json, out.join
   end
 
@@ -48,7 +48,7 @@ class TestREST < Test::Unit::TestCase
       code, headers, out = rack.call env
     end.join
 
-    json = '[1,"get_var",2,0,{"0":{"i32":42}}]'
+    json = '{"result":42}'
     assert_equal json, out.join
   end
 
@@ -64,7 +64,7 @@ class TestREST < Test::Unit::TestCase
       code, headers, out = rack.call env
     end.join
 
-    json = '[1,"metadata",2,0,{"0":{"map":["str","str",2,{"version":"1.0 baby","name":"This is a sweet service"}]}}]'
+    json = '{"result":{"version":"1.0 baby","name":"This is a sweet service"}}'
     assert_equal json, out.join
   end
 end
