@@ -1,6 +1,7 @@
 require 'stark'
 require 'stark/rack/content_negotiation'
 require 'stark/rack/logging_processor'
+require 'stark/rack/verbose_protocol'
 
 class Stark::Rack
 

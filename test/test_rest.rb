@@ -52,6 +52,22 @@ class TestREST < Test::Unit::TestCase
     assert_equal json, out.join
   end
 
+  def test_get_state
+    rack = Stark::Rack::REST.new stark_rack
+    @handler.store_vars 'a' => 42
+    @handler.add 2, 2
+    out = ['']
+    Thread.new do
+      env = {'rack.input' => StringIO.new, 'REQUEST_METHOD' => 'GET',
+        'PATH_INFO' => '/get_state', 'QUERY_STRING' => ''}
+
+      code, headers, out = rack.call env
+    end.join
+
+    json = '{"result":{"last_result":4,"vars":{"a":42}}}'
+    assert_equal json, out.join
+  end
+
   def test_get_metadata
     metadata = { 'version' => '1.0 baby', 'name' => "This is a sweet service" }
     rack = Stark::Rack::REST.new Stark::Rack::Metadata.new(stark_rack, metadata)
