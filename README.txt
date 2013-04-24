@@ -1,26 +1,30 @@
-= thrift-rack
+= stark-rack
 
-* FIX (url)
+* https://github.com/evanphx/stark-rack
 
 == DESCRIPTION:
 
-FIX (describe your package)
+Provides middleware for mounting Stark/Thrift services as Rack endpoints.
 
 == FEATURES/PROBLEMS:
 
-* FIX (list of features or problems)
+* Thrift binary protocol by default
+* JSON protocol with 'Accept: application/json' in request headers
 
 == SYNOPSIS:
 
-  FIX (code sample of usage)
+  # config.ru
+  use Stark::Rack
+  use MyService::Processor  # Stark/Thrift processor
+  run MyHandler.new         # Handler that implements service
 
 == REQUIREMENTS:
 
-* FIX (list of requirements)
+* Rack (optional; only required with Stark::Rack::REST middleware)
 
 == INSTALL:
 
-* FIX (sudo gem install, anything else)
+* gem install stark-rack
 
 == DEVELOPERS:
 
@@ -35,7 +39,7 @@ and generate the RDoc.
 
 (The MIT License)
 
-Copyright (c) 2012 FIX
+Copyright (c) 2012, 2013 Evan Phoenix
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
