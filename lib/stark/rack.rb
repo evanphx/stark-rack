@@ -1,53 +1,9 @@
 require 'stark'
+require 'stark/rack/logging_processor'
 
 class Stark::Rack
+
   VERSION = '1.0.0'
-
-  class LoggingProcessor
-    def initialize(handler, secondary=nil)
-      @handler = handler
-      @secondary = secondary
-    end
-
-    def process(iprot, oprot)
-      name, type, seqid = iprot.read_message_begin
-      if @handler.respond_to?("process_#{name}")
-        e = nil
-
-        begin
-          @handler.send("process_#{name}", seqid, iprot, oprot)
-        rescue StandardError => e
-          x = Thrift::ApplicationException.new(
-                           Thrift::ApplicationException::UNKNOWN,
-                           "#{e.message} (#{e.class}")
-          oprot.write_message_begin(name, Thrift::MessageTypes::EXCEPTION, seqid)
-          x.write(oprot)
-          oprot.write_message_end
-          oprot.trans.flush
-        end
-
-        if s = @secondary
-          if e
-            s.error name, type, seqid, e
-          else
-            s.success name, type, seqid
-          end
-        end
-
-        [name, type, seqid, e]
-      else
-        iprot.skip(Thrift::Types::STRUCT)
-        iprot.read_message_end
-        x = Thrift::ApplicationException.new(Thrift::ApplicationException::UNKNOWN_METHOD,
-                                     "Unknown function: #{name}")
-        oprot.write_message_begin(name, Thrift::MessageTypes::EXCEPTION, seqid)
-        x.write(oprot)
-        oprot.write_message_end
-        oprot.trans.flush
-        false
-      end
-    end
-  end
 
   FORMAT = %{when: %0.4f, client: "%s", path: "%s%s", type: "%s", name: "%s", seqid: %d, error: %s\n}
 
@@ -59,16 +15,23 @@ class Stark::Rack
   }
 
   def initialize(processor, options={})
-    @processor = LoggingProcessor.new processor
     @protocol = Thrift::BinaryProtocolFactory.new
     @log = options[:log]
     @logger = STDERR
-    @metadata = options[:metadata]
+    @app_processor = processor
   end
 
   attr_accessor :log
 
+  def processor
+    @processor ||= LoggingProcessor.new(@app_processor, error_capture)
+  end
+
   def call(env)
+    dup._call(env)
+  end
+
+  def _call(env)
     headers = {
       'Content-Type' => "application/x-thrift"
     }
@@ -76,21 +39,17 @@ class Stark::Rack
     path = env['PATH_INFO'] || ""
     path << "/" if path.empty?
 
-    if path == "/metadata"
-      headers['Content-Type'] = "text/plain"
-
-      return [200, headers, [@metadata]]
-    elsif path != "/"
+    unless path == "/"
       return [404, {}, ["Nothing at #{path}"]]
     end
 
     out = StringIO.new
 
     transport = Thrift::IOStreamTransport.new env['rack.input'], out
-    protocol = @protocol.get_protocol transport
+    protocol  = @protocol.get_protocol transport
 
     if @log
-      name, type, seqid, err = @processor.process protocol, protocol
+      name, type, seqid, err = processor.process protocol, protocol
 
       @logger.write FORMAT % [
         Time.now.to_f,
@@ -103,9 +62,29 @@ class Stark::Rack
         err ? "'#{err.message} (#{err.class})'" : "null"
       ]
     else
-      @processor.process protocol, protocol
+      processor.process protocol, protocol
     end
 
-    [200, headers, [out.string]]
+    [status_from_last_error, headers, [out.string]]
+  end
+
+  def error_capture
+    lambda do |m,*args|
+      @last_error = [m, args]
+    end.tap do |x|
+      (class << x; self; end).instance_eval {
+        alias_method :method_missing, :call }
+    end
+  end
+
+  def status_from_last_error
+    return 200 if @last_error.nil? || @last_error.first == :success
+    x = @last_error.last[3]
+    case x.type
+    when Thrift::ApplicationException::UNKNOWN_METHOD
+      404
+    else
+      500
+    end
   end
 end
