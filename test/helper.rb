@@ -3,6 +3,18 @@ module TestHelper
     def add(a,b)
       @result = a + b
     end
+    def last_result
+      @result
+    end
+    def store_vars(hash)
+      @vars ||= {}
+      hash.each do |k,v|
+        @vars[k] = v.to_i
+      end
+    end
+    def get_var(name)
+      @vars[name]
+    end
   end
 
   def setup
