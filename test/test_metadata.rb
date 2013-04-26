@@ -15,7 +15,7 @@ class TestMetadata < Test::Unit::TestCase
   def test_call_to_metadata
     @client = Stark::Rack::Metadata::Client.new @client_p, @client_p
     st = Thread.new do
-      env = { 'rack.input' => @sr, 'PATH_INFO' => '/metadata' }
+      env = { 'rack.input' => @sr, 'PATH_INFO' => '/metadata', 'REQUEST_METHOD' => 'POST' }
       code, headers, out = @rack.call env
 
       out.each do |s|
@@ -28,7 +28,7 @@ class TestMetadata < Test::Unit::TestCase
 
   def test_call_add_passes_through_metadata
     st = Thread.new do
-      env = { 'rack.input' => @sr, 'PATH_INFO' => '/' }
+      env = { 'rack.input' => @sr, 'PATH_INFO' => '/', 'REQUEST_METHOD' => 'POST' }
       code, headers, out = @rack.call env
 
       out.each do |s|

@@ -38,8 +38,13 @@ class Stark::Rack
     path = env['PATH_INFO'] || ""
     path << "/" if path.empty?
 
+    if env["REQUEST_METHOD"] != "POST"
+      return [405, {"Content-Type" => "text/plain"},
+              ["Method #{env["REQUEST_METHOD"]} not allowed, must be POST\n"]]
+    end
+
     unless path == "/"
-      return [404, {}, ["Nothing at #{path}"]]
+      return [404, {"Content-Type" => "text/plain"}, ["Nothing at #{path}\n"]]
     end
 
     out = StringIO.new

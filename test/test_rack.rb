@@ -5,9 +5,10 @@ require "helper"
 class TestRack < Test::Unit::TestCase
   include TestHelper
 
+
   def test_call_to_thrift
     st = Thread.new do
-      env = { 'rack.input' => @sr }
+      env = { 'rack.input' => @sr, 'REQUEST_METHOD' => 'POST' }
       env['PATH_INFO'] = ''
 
       code, headers, out = stark_rack.call env
@@ -27,7 +28,7 @@ class TestRack < Test::Unit::TestCase
     @client = @n::Calc::Client.new @client_p, @client_p
 
     st = Thread.new do
-      env = { 'rack.input' => @sr }
+      env = { 'rack.input' => @sr, 'REQUEST_METHOD' => 'POST' }
       env['PATH_INFO'] = ''
       env['HTTP_ACCEPT'] = 'application/json'
 
@@ -43,8 +44,17 @@ class TestRack < Test::Unit::TestCase
     assert_equal 7, out
   end
 
+  def test_call_with_wrong_method
+    env = { 'REQUEST_METHOD' => 'GET' }
+    env['PATH_INFO'] = '/'
+
+    code, headers, out = stark_rack.call env
+
+    assert_equal 405, code
+  end
+
   def test_call_to_undefined_url
-    env = {}
+    env = { 'REQUEST_METHOD' => 'POST' }
     env['PATH_INFO'] = '/blah'
 
     code, headers, out = stark_rack.call env
