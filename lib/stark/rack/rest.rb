@@ -14,12 +14,26 @@ class Stark::Rack
     end
 
     def call(env)
-      if env["REQUEST_METHOD"] == "GET" || env["HTTP_CONTENT_TYPE"] != THRIFT_CONTENT_TYPE
+      if looks_like_rest?(env)
         env['stark.protocol.factory'] = VerboseProtocolFactory.new
         create_thrift_call_from_params env
+        status, headers, body = @app.call env
+        [status, headers, unmarshal_result(env, body)]
+      else
+        @app.call env
       end
-      status, headers, body = @app.call env
-      [status, headers, unmarshal_result(env, body)]
+    end
+
+    def looks_like_rest?(env)
+      path         = env["PATH_INFO"]
+      content_type = env["HTTP_CONTENT_TYPE"]
+      accept       = env["HTTP_ACCEPT"]
+
+      path && path.length > 1 && # need a method name
+        (env["REQUEST_METHOD"] == "GET" || # pure GET, no body
+         # posted content isn't thrift or doesn't match what is requested (e.g.,
+         # json)
+         content_type != THRIFT_CONTENT_TYPE && accept != content_type)
     end
 
     def path_to_method_name(path)
@@ -57,8 +71,9 @@ class Stark::Rack
       proto.write_message_end
       proto.trans.flush
       input.rewind
-      env['PATH_INFO'] = '/'
       env['rack.input'] = input
+      env['PATH_INFO'] = '/'
+      env['REQUEST_METHOD'] = 'POST'
     end
 
     def decode_thrift_proto(proto, type)
