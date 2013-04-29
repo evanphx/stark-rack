@@ -18,6 +18,7 @@ class Stark::Rack
         env['stark.protocol.factory'] = VerboseProtocolFactory.new
         create_thrift_call_from_params env
         status, headers, body = @app.call env
+        headers["Content-Type"] = "application/json"
         [status, headers, unmarshal_result(env, body)]
       else
         @app.call env
