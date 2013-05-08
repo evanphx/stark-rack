@@ -12,9 +12,10 @@ class Stark::Rack
         begin
           @handler.send("process_#{name}", seqid, iprot, oprot)
         rescue StandardError => e
+          Stark.logger.error "#{@handler.class.name}#process_#{name}: #{e.message}\n  " + e.backtrace.join("\n  ")
           x = Thrift::ApplicationException.new(
                            Thrift::ApplicationException::UNKNOWN,
-                           "#{e.message} (#{e.class}")
+                           "#{e.message} (#{e.class})")
           oprot.write_message_begin(name, Thrift::MessageTypes::EXCEPTION, seqid)
           x.write(oprot)
           oprot.write_message_end
