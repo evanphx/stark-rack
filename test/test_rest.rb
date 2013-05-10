@@ -88,7 +88,7 @@ class TestREST < Test::Unit::TestCase
     Thread.new do
       env = {'rack.input' => StringIO.new, 'REQUEST_METHOD' => 'GET',
         'PATH_INFO' => '/set_state',
-        'QUERY_STRING' => 'arg[0][_struct_]=State&arg[0][last_result]=0&arg[0][vars][a]=1&arg[0][vars][b]=2'}
+        'QUERY_STRING' => '_struct_=State&last_result=0&vars[a]=1&vars[b]=2'}
 
       code, headers, out = rack.call env
     end.join

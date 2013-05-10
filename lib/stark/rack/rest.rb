@@ -3,9 +3,86 @@ require 'rack/utils/okjson'
 require 'stark/rack'
 
 class Stark::Rack
-  # This enables requests like "GET /foo" to be translated to either a no-args
-  # call to the foo method or a single-arg call containing an array or map of
-  # the incoming parameters.
+  # Public: This middleware translates "REST-y" requests into Thrift requests
+  # and Thrift responses to a simplified, intuitive JSON response.
+  #
+  # In order for a request to qualify as "REST-y" its PATH_INFO must contain a
+  # method name and must either be:
+  #
+  # - a GET request, possibly with a query string
+  # - a POST or PUT request with body containing form data
+  #   (application/x-www-form-urlencoded or multipart/form-data) or JSON
+  #   (application/json)
+  #
+  # Given the following thrift definition:
+  #
+  #     struct State {
+  #       1: i32 last_result
+  #       2: map<string,i32> vars
+  #     }
+  #
+  #     service Calc {
+  #       i32 add(1: i32 lhs, 2: i32 rhs)
+  #       i32 last_result()
+  #       void store_vars(1: map<string,i32> vars)
+  #       i32 get_var(1: string name)
+  #       void set_state(1: State state)
+  #       State get_state()
+  #     }
+  #
+  # When the Calc service is mounted in a Stark::Rack endpoint at the `/calc` path,
+  # all of the examples below demonstrate valid requests.
+  #
+  # Examples
+  #
+  #     # Calls last_result()
+  #     GET /calc/last_result
+  #
+  #     # Also calls last_result(). Non-alphanumeric are converted to
+  #     # underscore.
+  #     GET /calc/last-result
+  #
+  #     # Calls get_var("a") using open-ended array parameter.
+  #     # Effective params hash: {"arg" => ["a"]}
+  #     GET /calc/get_var?arg[]=a
+  #
+  #     # Calls get_var("a") using an indexed-hash parameter with 0-based numeric keys.
+  #     # Effective params hash: {"arg" => {"0" => "a"}}
+  #     GET /calc/get_var?arg[0]=a
+  #
+  #     # Calls add(1, 1) using an open-ended array parameter.
+  #     # Effective params hash: {"arg" => ["1", "1"]}
+  #     GET /calc/add?arg[]=1&arg[]=2
+  #
+  #     # Calls store_vars({"a" => 1, "b" => 2, "c" => 3}),
+  #     # treating query parameters as a single map argument.
+  #     GET /calc/store_vars?a=1&b=2&c=3
+  #
+  #     # Calls set_state(State.new(:last_result => 0, :vars => {"a" => 1, "b"=> 2})).
+  #     # Note the presence of a "_struct_" key in the parameters, marking a
+  #     # struct instead of a map.
+  #     GET /calc/set_state?_struct_=State&last_result=0&vars[a]=1&vars[b]=2
+  #
+  #     # Calls set_state(State.new(:last_result => 0, :vars => {"a" => 1, "b"=> 2})),
+  #     # using indexed-hash format.
+  #     # Effective params hash:
+  #     # {"arg" => {"0" => {"_struct_" => "State", "last_result" => "0", "vars" => {"a" => "1", "b" => "2"}}}}
+  #     GET /calc/set_state?arg[0][_struct_]=State&arg[0][last_result]=0&arg[0][vars][a]=1&arg[0][vars][b]=2
+  #
+  #     # Calls set_state(State.new(:last_result => 0, :vars => {"a" => 1, "b"=> 2})),
+  #     # using JSON.
+  #     POST /calc/set_state
+  #     Content-Type: application/json
+  #
+  #     [{"_struct_":"State","last_result":0,"vars":{"a":1,"b":2}}]
+  #
+  #     # Calls set_state(State.new(:last_result => 0, :vars => {"a" => 1, "b"=> 2})),
+  #     # using JSON with indexed-hash format.
+  #     POST /calc/set_state
+  #     Content-Type: application/json
+  #
+  #     {"arg":{"0":{"_struct_":"State","last_result":0,"vars":{"a":1,"b":2}}}}
+  #
   class REST
     include ContentNegotiation
 
