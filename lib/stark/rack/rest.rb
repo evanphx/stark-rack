@@ -9,6 +9,10 @@ class Stark::Rack
   class REST
     include ContentNegotiation
 
+    # Name of marker key in a hash that indicates it represents a struct. The
+    # struct name is the corresponding value.
+    STRUCT = '_struct_'
+
     def initialize(app)
       @app = app
     end
@@ -47,37 +51,91 @@ class Stark::Rack
       input = StringIO.new
       proto = protocol_factory(env).get_protocol(Thrift::IOStreamTransport.new(input, input))
       proto.write_message_begin name, Thrift::MessageTypes::CALL, 0
-      proto.write_struct_begin "#{name}_args"
+
+      obj = { STRUCT => "#{name}_args" }
       if !params.empty?
-        if Hash === params['arg']
-          params = params['arg']
-          0.upto(params.size - 1) do |i|
-            proto.write_field_begin "arg#{i}", Thrift::Types::STRING, i
-            proto.write_string params["#{i}"]
-            proto.write_field_end
+        arguments = params['arg'] || params['args']
+        if Hash === arguments
+          0.upto(arguments.size - 1) do |i|
+            obj["arg#{i}"] = arguments["#{i}"]
+          end
+        elsif Array === arguments
+          0.upto(arguments.size - 1) do |i|
+            obj["arg#{i}"] = arguments[i]
           end
         else
-          proto.write_field_begin 'params', Thrift::Types::MAP, 1
-          proto.write_map_begin Thrift::Types::STRING, Thrift::Types::STRING, params.size
-          params.each do |k,v|
-            proto.write_string k
-            proto.write_string v
-          end
-          proto.write_map_end
-          proto.write_field_end
+          obj['arg0'] = params
         end
       end
-      proto.write_field_stop
-      proto.write_struct_end
+
+      encode_thrift_obj proto, obj
+
       proto.write_message_end
       proto.trans.flush
+
       input.rewind
       env['rack.input'] = input
       env['PATH_INFO'] = '/'
       env['REQUEST_METHOD'] = 'POST'
+      true
     end
 
-    def decode_thrift_proto(proto, type)
+    # Determine a thrift type to use from an array of values.
+    def value_type(vals)
+      types = vals.map {|v| v.class }.uniq
+
+      # Convert everything to string if there isn't a single unique type
+      return Thrift::Types::STRING if types.size > 1
+
+      type = types.first
+
+      # Array -> LIST
+      return Thrift::Types::LIST if type == Array
+
+      # Hash can be a MAP or STRUCT
+      if type == Hash
+        if vals.first.has_key?(STRUCT)
+          return Thrift::Types::STRUCT
+        else
+          return Thrift::Types::MAP
+        end
+      end
+
+      Thrift::Types::STRING
+    end
+
+    def encode_thrift_obj(proto, obj)
+      case obj
+      when Hash
+        if struct = obj.delete(STRUCT)
+          proto.write_struct_begin struct
+          idx = 1
+          obj.each do |k,v|
+            proto.write_field_begin k, value_type([v]), idx
+            encode_thrift_obj proto, v
+            proto.write_field_end
+            idx += 1
+          end
+          proto.write_field_stop
+          proto.write_struct_end
+        else
+          proto.write_map_begin Thrift::Types::STRING, value_type(obj.values), obj.size
+          obj.each do |k,v|
+            proto.write_string k
+            encode_thrift_obj proto, v
+          end
+          proto.write_map_end
+        end
+      when Array
+        proto.write_list_begin value_type(obj), obj.size
+        obj.each {|v| encode_thrift_obj proto, v }
+        proto.write_list_end
+      else
+        proto.write_string obj.to_s
+      end
+    end
+
+    def decode_thrift_obj(proto, type)
       case type
       when Thrift::Types::BOOL
         proto.read_bool
@@ -95,11 +153,12 @@ class Stark::Rack
         proto.read_string
       when Thrift::Types::STRUCT
         Hash.new.tap do |hash|
-          proto.read_struct_begin
+          struct = proto.read_struct_begin
+          hash[STRUCT] = struct if struct
           while true
             name, type, id = proto.read_field_begin
             break if type == Thrift::Types::STOP
-            hash[(name || id).to_s] = decode_thrift_proto proto, type
+            hash[(name || id).to_s] = decode_thrift_obj proto, type
             proto.read_field_end
           end
           proto.read_struct_end
@@ -108,7 +167,7 @@ class Stark::Rack
         Hash.new.tap do |hash|
           kt, vt, size = proto.read_map_begin
           size.times do
-            hash[decode_thrift_proto(proto, kt).to_s] = decode_thrift_proto(proto, vt)
+            hash[decode_thrift_obj(proto, kt).to_s] = decode_thrift_obj(proto, vt)
           end
           proto.read_map_end
         end
@@ -116,7 +175,7 @@ class Stark::Rack
         Set.new.tap do |set|
           vt, size = proto.read_set_begin
           size.times do
-            set << decode_thrift_proto(proto, vt)
+            set << decode_thrift_obj(proto, vt)
           end
           proto.read_set_end
         end
@@ -124,7 +183,7 @@ class Stark::Rack
         Array.new.tap do |list|
           vt, size = proto.read_list_begin
           size.times do
-            list << decode_thrift_proto(proto, vt)
+            list << decode_thrift_obj(proto, vt)
           end
           proto.read_list_end
         end
@@ -141,7 +200,7 @@ class Stark::Rack
       proto.read_message_begin
       proto.read_struct_begin
       _, type, id = proto.read_field_begin
-      result = decode_thrift_proto(proto, type)
+      result = decode_thrift_obj(proto, type)
       [Rack::Utils::OkJson.encode((id == 0 ? "result" : "error") => result)]
     end
   end

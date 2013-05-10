@@ -21,6 +21,9 @@ module TestHelper
     def get_state
       @state
     end
+    def set_state(state)
+      @state = state
+    end
   end
 
   def setup

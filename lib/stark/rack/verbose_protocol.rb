@@ -1,8 +1,17 @@
 class Stark::Rack
-  # Slightly more verbose protocol so that we can get the field names included.
+  # Slightly more verbose protocol so that we can get struct and field names
+  # included.
   class VerboseProtocol < Thrift::BinaryProtocol
+    def write_struct_begin(name)
+      write_string name
+    end
+
+    def read_struct_begin
+      read_string
+    end
+
     def write_field_begin(name, type, id)
-      write_string(name)
+      write_string name
       super
     end
 

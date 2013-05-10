@@ -23,7 +23,7 @@ class TestREST < Test::Unit::TestCase
     assert_equal json, out.join
   end
 
-  def test_store_vars
+  def test_store_vars_with_single_arg_map
     rack = Stark::Rack::REST.new stark_rack
     Thread.new do
       env = {'rack.input' => StringIO.new, 'REQUEST_METHOD' => 'GET',
@@ -37,13 +37,28 @@ class TestREST < Test::Unit::TestCase
     assert_equal 3, @handler.get_var('c')
   end
 
-  def test_get_var
+  def test_get_var_with_arg_map
     rack = Stark::Rack::REST.new stark_rack
     @handler.store_vars 'a' => 42
     out = ['']
     Thread.new do
       env = {'rack.input' => StringIO.new, 'REQUEST_METHOD' => 'GET',
         'PATH_INFO' => '/get_var', 'QUERY_STRING' => 'arg[0]=a'}
+
+      code, headers, out = rack.call env
+    end.join
+
+    json = '{"result":42}'
+    assert_equal json, out.join
+  end
+
+  def test_get_var_with_arg_array
+    rack = Stark::Rack::REST.new stark_rack
+    @handler.store_vars 'a' => 42
+    out = ['']
+    Thread.new do
+      env = {'rack.input' => StringIO.new, 'REQUEST_METHOD' => 'GET',
+        'PATH_INFO' => '/get_var', 'QUERY_STRING' => 'args[]=a'}
 
       code, headers, out = rack.call env
     end.join
@@ -64,8 +79,23 @@ class TestREST < Test::Unit::TestCase
       code, headers, out = rack.call env
     end.join
 
-    json = '{"result":{"last_result":4,"vars":{"a":42}}}'
+    json = '{"result":{"_struct_":"State","last_result":4,"vars":{"a":42}}}'
     assert_equal json, out.join
+  end
+
+  def test_set_state_with_GET
+    rack = Stark::Rack::REST.new stark_rack
+    Thread.new do
+      env = {'rack.input' => StringIO.new, 'REQUEST_METHOD' => 'GET',
+        'PATH_INFO' => '/set_state',
+        'QUERY_STRING' => 'arg[0][_struct_]=State&arg[0][last_result]=0&arg[0][vars][a]=1&arg[0][vars][b]=2'}
+
+      code, headers, out = rack.call env
+    end.join
+
+    assert_equal 0, @handler.last_result
+    assert_equal 1, @handler.get_var('a')
+    assert_equal 2, @handler.get_var('b')
   end
 
   def test_get_metadata

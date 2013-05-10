@@ -8,5 +8,6 @@ service Calc {
   i32 last_result()
   void store_vars(1: map<string,i32> vars)
   i32 get_var(1: string name)
+  void set_state(1: State state)
   State get_state()
 }
