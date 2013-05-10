@@ -30,7 +30,7 @@ class TestRack < Test::Unit::TestCase
     st = Thread.new do
       env = { 'rack.input' => @sr, 'REQUEST_METHOD' => 'POST' }
       env['PATH_INFO'] = ''
-      env['HTTP_ACCEPT'] = 'application/json'
+      env['HTTP_CONTENT_TYPE'] = 'application/vnd.thrift+json'
 
       code, headers, out = stark_rack.call env
 

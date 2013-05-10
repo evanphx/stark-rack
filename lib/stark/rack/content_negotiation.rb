@@ -1,15 +1,17 @@
 class Stark::Rack
   module ContentNegotiation
     THRIFT_CONTENT_TYPE = 'application/x-thrift'
+    THRIFT_JSON_CONTENT_TYPE = 'application/vnd.thrift+json'
 
     def accept_json?(env)
-      env['HTTP_ACCEPT'] =~ /^application\/json/
+      env['HTTP_ACCEPT'] == THRIFT_JSON_CONTENT_TYPE ||
+        env['HTTP_CONTENT_TYPE'] == THRIFT_JSON_CONTENT_TYPE
     end
 
     def headers(env)
       headers = { 'Content-Type' => THRIFT_CONTENT_TYPE }
       if accept_json?(env)
-        headers['Content-Type'] = 'application/json'
+        headers['Content-Type'] = THRIFT_JSON_CONTENT_TYPE
       end
       headers
     end
