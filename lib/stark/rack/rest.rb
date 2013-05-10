@@ -21,12 +21,17 @@ class Stark::Rack
   # - Hashes are converted into maps.
   # - Arrays are converted into lists.
   # - Structs can be passed as a hash that includes a '_struct_' key.
-  # - The keys of a struct hash should be the field numbers. Field names can be
-  #   used provided that the fields declared in the IDL are numbered starting at
-  #   1, increase monotonically, and the request struct key/values appear in the
-  #   order in which they are declared in the IDL.
   # - Everything else is converted into strings and makes use of Stark's
   #   facility to coerce strings into other types (numbers, booleans).
+  #
+  # Structs additionally must follow these conventions.
+  # - The keys of a struct hash should start with the field numbers. Anything
+  #   after the number is discarded (e.g., for "1" or "1last_result" or
+  #   "1-last_result", "last_result" or "-last_result" are discarded).
+  # - Field names not prefixed with a number can be used provided that the
+  #   fields declared in the IDL are numbered starting at 1, increase
+  #   monotonically, and the request struct key/values appear in the order in
+  #   which they are declared in the IDL.
   #
   # Given the following thrift definition:
   #
@@ -217,11 +222,16 @@ class Stark::Rack
           proto.write_struct_begin struct
           idx = 1
           obj.each do |k,v|
-            if k =~ /^\d+$/
-              proto.write_field_begin "field#{k}", value_type([v]), k.to_i
+            _, number, name = /^(\d*)(.*?)$/.match(k).to_a
+            if number.nil? || number.empty?
+              number = idx
             else
-              proto.write_field_begin k, value_type([v]), idx
+              number = number.to_i
             end
+            name = "field#{number}" if name.nil? || name.empty?
+
+            proto.write_field_begin name, value_type([v]), number
+
             encode_thrift_obj proto, v
             proto.write_field_end
             idx += 1
