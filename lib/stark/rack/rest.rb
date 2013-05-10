@@ -14,6 +14,20 @@ class Stark::Rack
   #   (application/x-www-form-urlencoded or multipart/form-data) or JSON
   #   (application/json)
   #
+  # When converting parameters or JSON into Thrift, several conventions and
+  # assumptions are made. If your input does not follow these conventions, the
+  # conversion may succeed but the underlying thrift call may fail.
+  #
+  # - Hashes are converted into maps.
+  # - Arrays are converted into lists.
+  # - Structs can be passed as a hash that includes a '_struct_' key.
+  # - The keys of a struct hash should be the field numbers. Field names can be
+  #   used provided that the fields declared in the IDL are numbered starting at
+  #   1, increase monotonically, and the request struct key/values appear in the
+  #   order in which they are declared in the IDL.
+  # - Everything else is converted into strings and makes use of Stark's
+  #   facility to coerce strings into other types (numbers, booleans).
+  #
   # Given the following thrift definition:
   #
   #     struct State {
@@ -42,13 +56,16 @@ class Stark::Rack
   #     # underscore.
   #     GET /calc/last-result
   #
+  #     # Calls get_var("a") using an indexed-hash parameter with keys
+  #     # corresponding to argument field numbers.
+  #     # Effective params hash: {"arg" => {"1" => "a"}}
+  #     GET /calc/get_var?arg[1]=a
+  #
   #     # Calls get_var("a") using open-ended array parameter.
+  #     # Argument field numbers are assumed to start with 1 and increase
+  #     # monotonically.
   #     # Effective params hash: {"arg" => ["a"]}
   #     GET /calc/get_var?arg[]=a
-  #
-  #     # Calls get_var("a") using an indexed-hash parameter with 0-based numeric keys.
-  #     # Effective params hash: {"arg" => {"0" => "a"}}
-  #     GET /calc/get_var?arg[0]=a
   #
   #     # Calls add(1, 1) using an open-ended array parameter.
   #     # Effective params hash: {"arg" => ["1", "1"]}
@@ -66,8 +83,8 @@ class Stark::Rack
   #     # Calls set_state(State.new(:last_result => 0, :vars => {"a" => 1, "b"=> 2})),
   #     # using indexed-hash format.
   #     # Effective params hash:
-  #     # {"arg" => {"0" => {"_struct_" => "State", "last_result" => "0", "vars" => {"a" => "1", "b" => "2"}}}}
-  #     GET /calc/set_state?arg[0][_struct_]=State&arg[0][last_result]=0&arg[0][vars][a]=1&arg[0][vars][b]=2
+  #     # {"arg" => {"1" => {"_struct_" => "State", "last_result" => "0", "vars" => {"a" => "1", "b" => "2"}}}}
+  #     GET /calc/set_state?arg[1][_struct_]=State&arg[1][last_result]=0&arg[1][vars][a]=1&arg[1][vars][b]=2
   #
   #     # Calls set_state(State.new(:last_result => 0, :vars => {"a" => 1, "b"=> 2})),
   #     # using JSON.
@@ -81,7 +98,7 @@ class Stark::Rack
   #     POST /calc/set_state
   #     Content-Type: application/json
   #
-  #     {"arg":{"0":{"_struct_":"State","last_result":0,"vars":{"a":1,"b":2}}}}
+  #     {"arg":{"1":{"_struct_":"State","last_result":0,"vars":{"a":1,"b":2}}}}
   #
   class REST
     include ContentNegotiation
@@ -147,15 +164,13 @@ class Stark::Rack
       if !params.empty?
         arguments = params['arg'] || params['args']
         if Hash === arguments
-          0.upto(arguments.size - 1) do |i|
-            obj["arg#{i}"] = arguments["#{i}"]
-          end
+          obj.update(arguments)
         elsif Array === arguments
-          0.upto(arguments.size - 1) do |i|
-            obj["arg#{i}"] = arguments[i]
+          arguments.each_with_index do |v,i|
+            obj["#{i+1}"] = v
           end
         else
-          obj['arg0'] = params
+          obj["1"] = params
         end
       end
 
@@ -202,7 +217,11 @@ class Stark::Rack
           proto.write_struct_begin struct
           idx = 1
           obj.each do |k,v|
-            proto.write_field_begin k, value_type([v]), idx
+            if k =~ /^\d+$/
+              proto.write_field_begin "field#{k}", value_type([v]), k.to_i
+            else
+              proto.write_field_begin k, value_type([v]), idx
+            end
             encode_thrift_obj proto, v
             proto.write_field_end
             idx += 1

@@ -34,6 +34,10 @@ module TestHelper
     @sr, @cw = IO.pipe
     @cr, @sw = IO.pipe
 
+    @prev_logger = Stark.logger
+    @log_stream = StringIO.new
+    Stark.logger = Logger.new @log_stream
+
     @client_t = Thrift::IOStreamTransport.new @cr, @cw
     @client_p = Thrift::BinaryProtocol.new @client_t
 
@@ -42,6 +46,9 @@ module TestHelper
   end
 
   def teardown
+    print @log_stream.string unless passed?
+    Stark.logger = @prev_logger
+
     @client_t.close
     @sr.close
     @sw.close

@@ -37,13 +37,43 @@ class TestREST < Test::Unit::TestCase
     assert_equal 3, @handler.get_var('c')
   end
 
+  def test_add_with_arg_map
+    rack = Stark::Rack::REST.new stark_rack
+    @handler.store_vars 'a' => 42
+    out = ['']
+    Thread.new do
+      env = {'rack.input' => StringIO.new, 'REQUEST_METHOD' => 'GET',
+        'PATH_INFO' => '/add', 'QUERY_STRING' => 'arg[1]=1&arg[2]=1'}
+
+      code, headers, out = rack.call env
+    end.join
+
+    json = '{"result":2}'
+    assert_equal json, out.join
+  end
+
+  def test_add_with_arg_map_missing_an_argument
+    rack = Stark::Rack::REST.new stark_rack
+    @handler.store_vars 'a' => 42
+    out = ['']
+    Thread.new do
+      env = {'rack.input' => StringIO.new, 'REQUEST_METHOD' => 'GET',
+        'PATH_INFO' => '/add', 'QUERY_STRING' => 'arg[2]=1'}
+
+      code, headers, out = rack.call env
+    end.join
+
+    json = '{"error":"undefined method `+\' for nil:NilClass (NoMethodError)"}'
+    assert_equal json, out.join
+  end
+
   def test_get_var_with_arg_map
     rack = Stark::Rack::REST.new stark_rack
     @handler.store_vars 'a' => 42
     out = ['']
     Thread.new do
       env = {'rack.input' => StringIO.new, 'REQUEST_METHOD' => 'GET',
-        'PATH_INFO' => '/get_var', 'QUERY_STRING' => 'arg[0]=a'}
+        'PATH_INFO' => '/get_var', 'QUERY_STRING' => 'arg[1]=a'}
 
       code, headers, out = rack.call env
     end.join
