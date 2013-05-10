@@ -98,6 +98,35 @@ class TestREST < Test::Unit::TestCase
     assert_equal 2, @handler.get_var('b')
   end
 
+  def test_set_state_with_json_POST
+    rack = Stark::Rack::REST.new stark_rack
+    Thread.new do
+      env = {'rack.input' => StringIO.new('[{"_struct_":"State","last_result":0,"vars":{"a":1,"b":2}}]'),
+        'REQUEST_METHOD' => 'POST', 'PATH_INFO' => '/set_state',
+        'HTTP_CONTENT_TYPE' => 'application/json' }
+
+      code, headers, out = rack.call env
+    end.join
+
+    assert_equal 0, @handler.last_result
+    assert_equal 1, @handler.get_var('a')
+    assert_equal 2, @handler.get_var('b')
+  end
+
+  def test_set_state_json_bad_request
+    rack = Stark::Rack::REST.new stark_rack
+    code = headers = out = nil
+    Thread.new do
+      env = {'rack.input' => StringIO.new('42'),
+        'REQUEST_METHOD' => 'POST', 'PATH_INFO' => '/set_state',
+        'HTTP_CONTENT_TYPE' => 'application/json' }
+
+      code, headers, out = rack.call env
+    end.join
+
+    assert_equal 400, code
+  end
+
   def test_get_metadata
     metadata = { 'version' => '1.0 baby', 'name' => "This is a sweet service" }
     rack = Stark::Rack::REST.new Stark::Rack::Metadata.new(stark_rack, metadata)

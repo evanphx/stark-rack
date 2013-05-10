@@ -18,36 +18,50 @@ class Stark::Rack
     end
 
     def call(env)
-      if looks_like_rest?(env)
+      if applies?(env)
         env['stark.protocol.factory'] = VerboseProtocolFactory.new
-        create_thrift_call_from_params env
-        status, headers, body = @app.call env
-        headers["Content-Type"] = "application/json"
-        [status, headers, unmarshal_result(env, body)]
+        if send("create_thrift_call_from_#{env['stark.rest.input.format']}", env)
+          status, headers, body = @app.call env
+          headers["Content-Type"] = 'application/json'
+          [status, headers, unmarshal_result(env, body)]
+        else
+          [400, {}, []]
+        end
       else
         @app.call env
       end
     end
 
-    def looks_like_rest?(env)
+    def applies?(env)
       path         = env["PATH_INFO"]
       content_type = env["HTTP_CONTENT_TYPE"]
-      accept       = env["HTTP_ACCEPT"]
 
-      path && path.length > 1 && # need a method name
-        (env["REQUEST_METHOD"] == "GET" || # pure GET, no body
-         # posted content isn't thrift or doesn't match what is requested (e.g.,
-         # json)
-         content_type != THRIFT_CONTENT_TYPE && accept != content_type)
+      if path && path.length > 1 # need a method name
+        env['stark.rest.method.name'] = path.split('/')[1].gsub(/[^a-zA-Z0-9_]/, '_')
+        if content_type == 'application/json'
+          env['stark.rest.input.format'] = 'json'
+        elsif env["REQUEST_METHOD"] == "GET" || # pure GET, no body
+            # posted content looks like form data
+            Rack::Request::FORM_DATA_MEDIA_TYPES.include?(content_type)
+          env['stark.rest.input.format'] = 'params'
+        end
+      end
     end
 
-    def path_to_method_name(path)
-      path.split('/')[1].gsub(/[^a-zA-Z0-9_]/, '_')
+    def create_thrift_call_from_json(env)
+      params = Rack::Utils::OkJson.decode(env['rack.input'].read)
+      params = { 'args' => params } if Array === params
+      encode_thrift_call env, params
+    rescue
+      false
     end
 
     def create_thrift_call_from_params(env)
-      name = path_to_method_name env['PATH_INFO']
-      params = ::Rack::Request.new(env).params
+      encode_thrift_call env, ::Rack::Request.new(env).params
+    end
+
+    def encode_thrift_call(env, params)
+      name = env['stark.rest.method.name']
       input = StringIO.new
       proto = protocol_factory(env).get_protocol(Thrift::IOStreamTransport.new(input, input))
       proto.write_message_begin name, Thrift::MessageTypes::CALL, 0
