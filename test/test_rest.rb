@@ -109,7 +109,7 @@ class TestREST < Test::Unit::TestCase
       code, headers, out = rack.call env
     end.join
 
-    json = '{"result":{"_struct_":"State","last_result":4,"vars":{"a":42}}}'
+    json = '{"result":{"_struct_":"State","1:last_result":4,"2:vars":{"a":42}}}'
     assert_equal json, out.join
   end
 
@@ -118,7 +118,7 @@ class TestREST < Test::Unit::TestCase
     Thread.new do
       env = {'rack.input' => StringIO.new, 'REQUEST_METHOD' => 'GET',
         'PATH_INFO' => '/set_state',
-        'QUERY_STRING' => '_struct_=State&last_result=0&vars[a]=1&vars[b]=2'}
+        'QUERY_STRING' => '_struct_=State&1-last_result=0&2-vars[a]=1&2-vars[b]=2'}
 
       code, headers, out = rack.call env
     end.join
@@ -131,7 +131,7 @@ class TestREST < Test::Unit::TestCase
   def test_set_state_with_json_POST
     rack = Stark::Rack::REST.new stark_rack
     Thread.new do
-      env = {'rack.input' => StringIO.new('[{"_struct_":"State","last_result":0,"vars":{"a":1,"b":2}}]'),
+      env = {'rack.input' => StringIO.new('[{"_struct_":"State","1:last_result":0,"2:vars":{"a":1,"b":2}}]'),
         'REQUEST_METHOD' => 'POST', 'PATH_INFO' => '/set_state',
         'HTTP_CONTENT_TYPE' => 'application/json' }
 

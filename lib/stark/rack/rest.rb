@@ -278,7 +278,7 @@ class Stark::Rack
           while true
             name, type, id = proto.read_field_begin
             break if type == Thrift::Types::STOP
-            hash[(name || id).to_s] = decode_thrift_obj proto, type
+            hash["#{id}#{':'+name if name}"] = decode_thrift_obj proto, type
             proto.read_field_end
           end
           proto.read_struct_end
