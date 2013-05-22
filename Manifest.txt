@@ -9,6 +9,7 @@ lib/stark/rack/content_negotiation.rb
 lib/stark/rack/logging_processor.rb
 lib/stark/rack/metadata.rb
 lib/stark/rack/rest.rb
+lib/stark/rack/verbose_protocol.rb
 stark-rack.gemspec
 test/calc-opt.rb
 test/calc.thrift

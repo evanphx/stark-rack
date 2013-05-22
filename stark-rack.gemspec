@@ -2,11 +2,11 @@
 
 Gem::Specification.new do |s|
   s.name = "stark-rack"
-  s.version = "1.0.0.20130424083555"
+  s.version = "1.0.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Evan Phoenix"]
-  s.date = "2013-04-24"
+  s.date = "2013-05-22"
   s.description = "Provides middleware for mounting Stark/Thrift services as Rack endpoints."
   s.email = ["evan@phx.io"]
   s.extra_rdoc_files = ["History.txt", "Manifest.txt", "README.txt"]
@@ -15,7 +15,7 @@ Gem::Specification.new do |s|
   s.rdoc_options = ["--main", "README.txt"]
   s.require_paths = ["lib"]
   s.rubyforge_project = "stark-rack"
-  s.rubygems_version = "1.8.24"
+  s.rubygems_version = "1.8.23"
   s.summary = "Provides middleware for mounting Stark/Thrift services as Rack endpoints."
   s.test_files = ["test/test_metadata.rb", "test/test_rack.rb", "test/test_rest.rb"]
 
@@ -26,17 +26,17 @@ Gem::Specification.new do |s|
       s.add_runtime_dependency(%q<stark>, ["< 2.0.0"])
       s.add_development_dependency(%q<rdoc>, ["~> 4.0"])
       s.add_development_dependency(%q<rack>, [">= 1.5.0"])
-      s.add_development_dependency(%q<hoe>, ["~> 3.5"])
+      s.add_development_dependency(%q<hoe>, ["~> 3.6"])
     else
       s.add_dependency(%q<stark>, ["< 2.0.0"])
       s.add_dependency(%q<rdoc>, ["~> 4.0"])
       s.add_dependency(%q<rack>, [">= 1.5.0"])
-      s.add_dependency(%q<hoe>, ["~> 3.5"])
+      s.add_dependency(%q<hoe>, ["~> 3.6"])
     end
   else
     s.add_dependency(%q<stark>, ["< 2.0.0"])
     s.add_dependency(%q<rdoc>, ["~> 4.0"])
     s.add_dependency(%q<rack>, [">= 1.5.0"])
-    s.add_dependency(%q<hoe>, ["~> 3.5"])
+    s.add_dependency(%q<hoe>, ["~> 3.6"])
   end
 end
