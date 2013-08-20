@@ -12,10 +12,12 @@ Hoe::RUBY_FLAGS.concat " -I#{stark_local_path}" if File.directory?(stark_local_p
 Hoe.plugin :git
 Hoe.plugin :gemspec
 
-Hoe.spec 'stark-rack' do
+Hoe.spec 'stark-rack' do |spec|
   developer('Evan Phoenix', 'evan@phx.io')
   dependency 'stark', '< 2.0.0'
   dependency 'rack', '>= 1.5.0', :dev
+
+  spec.testlib = :testunit if spec.respond_to?(:testlib)
 end
 
 # vim: syntax=ruby
