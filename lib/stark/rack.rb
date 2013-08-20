@@ -69,7 +69,7 @@ class Stark::Rack
       processor.process protocol, protocol
     end
 
-    [status_from_last_error, headers(env), [out.string]]
+    [status_from_last_error(env), headers(env), [out.string]]
   end
 
   def error_capture
@@ -81,9 +81,10 @@ class Stark::Rack
     end
   end
 
-  def status_from_last_error
+  def status_from_last_error(env)
     return 200 if @last_error.nil? || @last_error.first == :success
     x = @last_error.last[3]
+    env['rack.exception'] = x
     case x.type
     when Thrift::ApplicationException::UNKNOWN_METHOD
       404

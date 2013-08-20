@@ -62,4 +62,33 @@ class TestRack < Test::Unit::TestCase
     assert_equal 404, code
   end
 
+  def test_exception_sets_status_and_env_rack_exception
+    @client_p = Thrift::JsonProtocol.new @client_t
+    @client = @n::Calc::Client.new @client_p, @client_p
+
+    def @handler.add(*)
+      raise RangeError, "can't add"
+    end
+
+
+    code = headers = out = nil
+    env = { 'rack.input' => @sr, 'REQUEST_METHOD' => 'POST' }
+    env['PATH_INFO'] = ''
+    env['HTTP_CONTENT_TYPE'] = 'application/vnd.thrift+json'
+
+    st = Thread.new do
+      code, headers, out = stark_rack.call env
+      out.each do |s|
+        @sw << s
+      end
+    end
+
+    assert_raises Thrift::ApplicationException do
+      @client.add 3, 4
+    end
+
+    assert Thrift::ApplicationException === env['rack.exception']
+    assert env['rack.exception'].to_s =~ /^can't add/
+  end
+
 end
