@@ -2,16 +2,17 @@
 
 Gem::Specification.new do |s|
   s.name = "stark-rack"
-  s.version = "1.0.0"
+  s.version = "1.0.1"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Evan Phoenix"]
-  s.date = "2013-05-22"
+  s.date = "2013-08-20"
   s.description = "Provides middleware for mounting Stark/Thrift services as Rack endpoints."
   s.email = ["evan@phx.io"]
   s.extra_rdoc_files = ["History.txt", "Manifest.txt", "README.txt"]
-  s.files = [".autotest", ".gemtest", "History.txt", "Manifest.txt", "README.txt", "Rakefile", "lib/stark/rack.rb", "lib/stark/rack/content_negotiation.rb", "lib/stark/rack/logging_processor.rb", "lib/stark/rack/metadata.rb", "lib/stark/rack/rest.rb", "stark-rack.gemspec", "test/calc-opt.rb", "test/calc.thrift", "test/config.ru", "test/gen-rb/calc.rb", "test/gen-rb/calc_constants.rb", "test/gen-rb/calc_types.rb", "test/helper.rb", "test/test_metadata.rb", "test/test_rack.rb", "test/test_rest.rb"]
+  s.files = [".autotest", ".gemtest", "History.txt", "Manifest.txt", "README.txt", "Rakefile", "lib/stark/rack.rb", "lib/stark/rack/content_negotiation.rb", "lib/stark/rack/logging_processor.rb", "lib/stark/rack/metadata.rb", "lib/stark/rack/rest.rb", "lib/stark/rack/verbose_protocol.rb", "stark-rack.gemspec", "test/calc-opt.rb", "test/calc.thrift", "test/config.ru", "test/gen-rb/calc.rb", "test/gen-rb/calc_constants.rb", "test/gen-rb/calc_types.rb", "test/helper.rb", "test/test_metadata.rb", "test/test_rack.rb", "test/test_rest.rb"]
   s.homepage = "https://github.com/evanphx/stark-rack"
+  s.licenses = ["MIT"]
   s.rdoc_options = ["--main", "README.txt"]
   s.require_paths = ["lib"]
   s.rubyforge_project = "stark-rack"
@@ -26,17 +27,17 @@ Gem::Specification.new do |s|
       s.add_runtime_dependency(%q<stark>, ["< 2.0.0"])
       s.add_development_dependency(%q<rdoc>, ["~> 4.0"])
       s.add_development_dependency(%q<rack>, [">= 1.5.0"])
-      s.add_development_dependency(%q<hoe>, ["~> 3.6"])
+      s.add_development_dependency(%q<hoe>, ["~> 3.7"])
     else
       s.add_dependency(%q<stark>, ["< 2.0.0"])
       s.add_dependency(%q<rdoc>, ["~> 4.0"])
       s.add_dependency(%q<rack>, [">= 1.5.0"])
-      s.add_dependency(%q<hoe>, ["~> 3.6"])
+      s.add_dependency(%q<hoe>, ["~> 3.7"])
     end
   else
     s.add_dependency(%q<stark>, ["< 2.0.0"])
     s.add_dependency(%q<rdoc>, ["~> 4.0"])
     s.add_dependency(%q<rack>, [">= 1.5.0"])
-    s.add_dependency(%q<hoe>, ["~> 3.6"])
+    s.add_dependency(%q<hoe>, ["~> 3.7"])
   end
 end

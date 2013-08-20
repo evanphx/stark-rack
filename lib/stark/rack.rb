@@ -5,7 +5,7 @@ require 'stark/rack/verbose_protocol'
 
 class Stark::Rack
 
-  VERSION = '1.0.0'
+  VERSION = '1.0.1'
 
   FORMAT = %{when: %0.4f, client: "%s", path: "%s%s", type: "%s", name: "%s", seqid: %d, error: %s\n}
 
