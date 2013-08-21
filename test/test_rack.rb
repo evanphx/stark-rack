@@ -87,8 +87,8 @@ class TestRack < Test::Unit::TestCase
       @client.add 3, 4
     end
 
-    assert Thrift::ApplicationException === env['rack.exception']
-    assert env['rack.exception'].to_s =~ /^can't add/
+    assert_equal RangeError, env['rack.exception'].class
+    assert_equal "can't add", env['rack.exception'].to_s
   end
 
 end

@@ -84,7 +84,7 @@ class Stark::Rack
   def status_from_last_error(env)
     return 200 if @last_error.nil? || @last_error.first == :success
     x = @last_error.last[3]
-    env['rack.exception'] = x
+    env['rack.exception'] = x.cause.nil? ? x : x.cause
     case x.type
     when Thrift::ApplicationException::UNKNOWN_METHOD
       404

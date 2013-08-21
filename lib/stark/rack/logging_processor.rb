@@ -1,3 +1,7 @@
+class Thrift::ApplicationException
+  attr_accessor :cause
+end
+
 class Stark::Rack
   class LoggingProcessor
     def initialize(handler, secondary=nil)
@@ -16,6 +20,7 @@ class Stark::Rack
           x = Thrift::ApplicationException.new(
                            Thrift::ApplicationException::UNKNOWN,
                            "#{e.message} (#{e.class})")
+          x.cause = e
           oprot.write_message_begin(name, Thrift::MessageTypes::EXCEPTION, seqid)
           x.write(oprot)
           oprot.write_message_end
