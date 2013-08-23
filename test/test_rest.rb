@@ -110,7 +110,9 @@ class TestREST < Test::Unit::TestCase
     end.join
 
     json = '{"result":{"_struct_":"State","1:last_result":4,"2:vars":{"a":42}}}'
-    assert_equal json, out.join
+    expected_result = Rack::Utils::OkJson.decode json
+
+    assert_equal expected_result, Rack::Utils::OkJson.decode(out.join)
   end
 
   def test_set_state_with_GET
@@ -170,6 +172,8 @@ class TestREST < Test::Unit::TestCase
     end.join
 
     json = '{"result":{"version":"1.0 baby","name":"This is a sweet service"}}'
-    assert_equal json, out.join
+    expected_result = Rack::Utils::OkJson.decode json
+
+    assert_equal expected_result, Rack::Utils::OkJson.decode(out.join)
   end
 end
