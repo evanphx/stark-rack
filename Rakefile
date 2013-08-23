@@ -9,6 +9,7 @@ Hoe::RUBY_FLAGS.sub! /-w/, ''
 stark_local_path = File.expand_path('../../stark/lib', __FILE__)
 Hoe::RUBY_FLAGS.concat " -I#{stark_local_path}" if File.directory?(stark_local_path)
 
+Hoe.plugin :travis
 Hoe.plugin :git
 Hoe.plugin :gemspec
 
