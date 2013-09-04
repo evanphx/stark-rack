@@ -1,3 +1,7 @@
+=== 1.0.3 / 2013-09-03
+
+* Fill in Thrift::ApplicationException#backtrace from cause
+
 === 1.0.2 / 2013-08-21
 
 * Propagate root cause exception to env['rack.exception']

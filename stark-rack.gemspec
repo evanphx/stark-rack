@@ -2,15 +2,15 @@
 
 Gem::Specification.new do |s|
   s.name = "stark-rack"
-  s.version = "1.0.2"
+  s.version = "1.0.3"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Evan Phoenix"]
-  s.date = "2013-08-21"
+  s.date = "2013-09-04"
   s.description = "Provides middleware for mounting Stark/Thrift services as Rack endpoints."
   s.email = ["evan@phx.io"]
   s.extra_rdoc_files = ["History.txt", "Manifest.txt", "README.txt"]
-  s.files = [".autotest", ".gemtest", "History.txt", "Manifest.txt", "README.txt", "Rakefile", "lib/stark/rack.rb", "lib/stark/rack/content_negotiation.rb", "lib/stark/rack/logging_processor.rb", "lib/stark/rack/metadata.rb", "lib/stark/rack/rest.rb", "lib/stark/rack/verbose_protocol.rb", "stark-rack.gemspec", "test/calc-opt.rb", "test/calc.thrift", "test/config.ru", "test/gen-rb/calc.rb", "test/gen-rb/calc_constants.rb", "test/gen-rb/calc_types.rb", "test/helper.rb", "test/test_metadata.rb", "test/test_rack.rb", "test/test_rest.rb"]
+  s.files = [".autotest", ".gemtest", ".travis.yml", "History.txt", "Manifest.txt", "README.txt", "Rakefile", "lib/stark/rack.rb", "lib/stark/rack/content_negotiation.rb", "lib/stark/rack/logging_processor.rb", "lib/stark/rack/metadata.rb", "lib/stark/rack/rest.rb", "lib/stark/rack/verbose_protocol.rb", "stark-rack.gemspec", "test/calc-opt.rb", "test/calc.thrift", "test/config.ru", "test/gen-rb/calc.rb", "test/gen-rb/calc_constants.rb", "test/gen-rb/calc_types.rb", "test/helper.rb", "test/test_metadata.rb", "test/test_rack.rb", "test/test_rest.rb"]
   s.homepage = "https://github.com/evanphx/stark-rack"
   s.licenses = ["MIT"]
   s.rdoc_options = ["--main", "README.txt"]
