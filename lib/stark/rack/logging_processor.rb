@@ -1,5 +1,10 @@
 class Thrift::ApplicationException
-  attr_accessor :cause
+  attr_reader :cause
+
+  def cause=(e)
+    @cause = e
+    set_backtrace e.backtrace unless backtrace && !backtrace.empty?
+  end
 end
 
 class Stark::Rack
